@@ -3,7 +3,7 @@
 
 <article class="media content-section">
   <div class='media-body'>
-    <p>User IDs</p>
+    <legend>User IDs</legend>
     {% for user_count in user_counts %}
       <p class="article-content">{{ user_count.user_id }}: {{ user_count.count }}</p>
     {% endfor %}
@@ -12,7 +12,7 @@
 
 <article class="media content-section">
   <div class='media-body'>
-    <p>Video Numbers</p>
+    <legend>Video Numbers</legend>
     {% for video_count in video_counts %}
       <p class="article-content">{{ video_count.vid_num }}: {{ video_count.count }}</p>
     {% endfor %}

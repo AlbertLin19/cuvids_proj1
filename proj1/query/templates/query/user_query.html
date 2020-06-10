@@ -5,7 +5,7 @@
         <form action="{% url 'vid-query' %}" method="GET">
             {% csrf_token %}
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">User ID Search</legend>
+                <legend class="border-bottom mb-4">Enter user ID:</legend>
                 <label for='user_id'>User ID:</label><br>
                 <input type='text' id='user_id' name='user_id'><br>
             </fieldset>
