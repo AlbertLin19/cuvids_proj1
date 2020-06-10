@@ -1,0 +1,18 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="content-section">
+        <form action="{% url 'response' %}" method="GET">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Choose Video</legend>
+                <label for='vid_num'>Video Number:</label><br>
+                <input type='text' id='vid_num' name='vid_num'><br>
+                <input type='hidden' id='user_id' name='user_id' value='{{ user_id }}'><br>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Select</button>
+            </div>
+        </form>
+    </div>
+{% endblock content %}

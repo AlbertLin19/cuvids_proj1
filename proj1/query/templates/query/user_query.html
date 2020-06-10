@@ -1,0 +1,17 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="content-section">
+        <form action="{% url 'vid-query' %}" method="GET">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">User ID Search</legend>
+                <label for='user_id'>User ID:</label><br>
+                <input type='text' id='user_id' name='user_id'><br>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+{% endblock content %}
