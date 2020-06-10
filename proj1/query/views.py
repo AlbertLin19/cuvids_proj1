@@ -1,19 +1,31 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import UserCount, VideoCount
+from .models import UserCount, VideoCount, WatchData
 import fetch
 
 # home page: search for users
 def userQuery(request):
-	return render(request, 'query/user_query.html')
+
+	context = {
+		'users': fetch.get_users()
+	}
+	return render(request, 'query/user_query.html', context)
 
 # video search page: reached after user ID is selected
 def vidQuery(request):
 	user_id = request.GET.get('user_id')
-	context = {"user_id": user_id}
+	# check that the user_id is a number
+	if not user_id.isdigit():
+		messages.error(request, f"Invalid user ID given - redirecting back to user ID search!")
+		return redirect('user-query')
+	vid_nums = fetch.get_vids_for_user(user_id)
+	context = {
+		"vid_nums": vid_nums,
+		"user_id": user_id
+	}
 
 	# check that the user_id exists
-	if not fetch.has_user(user_id):
+	if not vid_nums:
 		messages.error(request, f"Invalid user ID given - redirecting back to user ID search!")
 		return redirect('user-query')
 
@@ -25,11 +37,15 @@ def vidQuery(request):
 def response(request):
 	user_id = request.GET.get('user_id')
 	vid_num = request.GET.get('vid_num')
+	# check that the vid_num is a number
+	if not vid_num.isdigit():
+		messages.error(request, f"Invalid video number given - redirecting back to user ID search!")
+		return redirect('user-query')
+	watches = fetch.get_objects_by_user_vid(user_id, vid_num)
 	context = { '' : None}
 
-	# check that the user exists
 	# check that the vid_num exists for that user
-	if not fetch.has_user(user_id) or not fetch.user_watched_vid(user_id, vid_num):
+	if not watches:
 		messages.error(request, f"Invalid video number given - redirecting back to user ID search!")
 		return redirect('user-query')
 

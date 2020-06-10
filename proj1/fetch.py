@@ -10,6 +10,7 @@ paths = [os.path.join(BASE_DIR, 'watch.txt'),]
 WatchData.objects.all().delete()
 
 data_objects = []
+redundant_users = []
 for path in paths:
 	file = open(path, 'r')
 	lines = file.readlines()
@@ -26,17 +27,20 @@ for path in paths:
 			vid_timestamp=vid_timestamp, 
 			speed=speed, user_id=user_id, 
 			vid_num=vid_num))
+		redundant_users.append(user_id)
 	WatchData.objects.bulk_create(data_objects)
 
+users = list(set(redundant_users))
 
+def get_users():
+	return users
 
+def get_vids_for_user(user_id):
+	all_watches = WatchData.objects.all().filter(user_id=user_id)
+	redundant_vid_nums = []
+	for watch in all_watches:
+		redundant_vid_nums.append(watch.vid_num)
+	return list(set(redundant_vid_nums))
 
-
-def getWatchData():
-	return ["test"]
-
-def has_user(user_id):
-	return True
-
-def user_watched_vid(user_id, vid_num):
-	return True
+def get_objects_by_user_vid(user_id, vid_num):
+	return WatchData.objects.all().filter(user_id=user_id, vid_num=vid_num)

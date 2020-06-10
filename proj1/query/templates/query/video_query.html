@@ -15,4 +15,9 @@
             </div>
         </form>
     </div>
+
+    <div class="content-section">Video numbers for this user:</div>
+    {% for vid_num in vid_nums %}
+    <p>{{ vid_num }}</p>
+    {% endfor %}
 {% endblock content %}
