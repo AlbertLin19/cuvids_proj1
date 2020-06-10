@@ -4,9 +4,13 @@ import os
 from query.models import WatchData 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WATCH_DIR = os.path.join(BASE_DIR, 'anonymized_data/')
 
-
-paths = [os.path.join(BASE_DIR, 'watch.txt'),]
+paths = []
+for root, directory, files in os.walk(WATCH_DIR):
+	for file in files:
+		if 'watches_range.txt' in file:
+			paths.append(os.path.join(root, file)) 
 WatchData.objects.all().delete()
 
 data_objects = []
