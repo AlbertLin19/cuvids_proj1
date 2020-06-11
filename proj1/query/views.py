@@ -16,7 +16,7 @@ def vidQuery(request):
 	user_id = request.GET.get('user_id')
 	# check that the user_id is a number
 	if not user_id.isdigit():
-		messages.error(request, f"Invalid user ID given - redirecting back to user ID search!")
+		messages.warning(request, f"Invalid user ID given - redirecting back to user ID search!")
 		return redirect('user-query')
 	vid_nums = fetch.get_vids_for_user(user_id)
 	context = {
@@ -26,7 +26,7 @@ def vidQuery(request):
 
 	# check that the user_id exists
 	if not vid_nums:
-		messages.error(request, f"Invalid user ID given - redirecting back to user ID search!")
+		messages.warning(request, f"Invalid user ID given - redirecting back to user ID search!")
 		return redirect('user-query')
 
 	# ask for a video number
@@ -39,14 +39,14 @@ def response(request):
 	vid_num = request.GET.get('vid_num')
 	# check that the vid_num is a number
 	if not vid_num.isdigit():
-		messages.error(request, f"Invalid video number given - redirecting back to user ID search!")
+		messages.warning(request, f"Invalid video number given - redirecting back to user ID search!")
 		return redirect('user-query')
-	watches = fetch.get_objects_by_user_vid(user_id, vid_num)
-	context = { '' : None}
 
 	# check that the vid_num exists for that user
-	if not watches:
-		messages.error(request, f"Invalid video number given - redirecting back to user ID search!")
+	plot = fetch.get_watch_patten_graph(user_id, vid_num)
+	context = {'plot': plot}
+	if not plot:
+		messages.warning(request, f"Invalid video number given - redirecting back to user ID search!")
 		return redirect('user-query')
 
 	# update the user and video query counts
@@ -60,6 +60,8 @@ def response(request):
 		video.update(count = video.first().count + 1)
 	else:
 		VideoCount.objects.create(vid_num=vid_num, count=1)
+
+	# display the graph
 	return render(request, 'query/response.html', context)
 
 # display stored query counts
