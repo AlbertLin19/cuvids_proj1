@@ -3,9 +3,17 @@
 import os
 from query.models import WatchData 
 
+# the Agg needs to be used to prevent 'outside main thread error' with the 'get_watch_patten_graph()' function
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+import datetime
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WATCH_DIR = os.path.join(BASE_DIR, 'anonymized_data/') # where all data and config files for data should be stored
+STATIC_DIR = os.path.join(BASE_DIR, 'proj1/query/static/') # where static files stored
 RELOAD_DIR = os.path.join(WATCH_DIR, 'reload.txt')     # signals for a reload when not empty
 reload_file = open(RELOAD_DIR, 'r')
 
@@ -65,9 +73,22 @@ if reload_file.readlines():
 	reload_file.close()
 
 	# store only unique users and videos
-	users = list(set(redundant_users))
-	videos = list(set(redundant_videos))
+	users = sorted(list(set(redundant_users)))
+	videos = sorted(list(set(redundant_videos)))
 
+else: # need to recache the unique users and videos upon a rerun of this script
+	redundant_users = []
+	redundant_videos = []
+	print("getting all the objects from the database")
+	all_watches = WatchData.objects.all()
+	print(f'scanning through {len(all_watches)} objects in the database')
+	for watch in all_watches:
+		redundant_users.append(watch.user_id)
+		redundant_videos.append(watch.vid_num)
+	users = sorted(list(set(redundant_users)))
+	videos = sorted(list(set(redundant_videos)))
+
+# script finished, close up everything
 reload_file.close()
 print('fetch.py was run again, reload_file closed')
 
@@ -79,19 +100,16 @@ def get_vids_for_user(user_id):
 	redundant_vid_nums = []
 	for watch in all_watches:
 		redundant_vid_nums.append(watch.vid_num)
-	return list(set(redundant_vid_nums))
+	return sorted(list(set(redundant_vid_nums)))
 
-
-import matplotlib.pyplot as plt
-import datetime
 def get_watch_patten_graph(user_id, vid_num):
 	gap_duration = 8 # watch is considered to be another session if gap exceeds this in seconds
 
 	# color for speeds - red will be scaled by speed
 	blue = 198/255.0
 	green = 168/255.0
-	alpha = 0.9
-	max_speed = 4 # speed scaled relative to this - will be found below
+	alpha = 1
+	max_speed = 1 # speed scaled relative to this - will be found below
 
 	objs = WatchData.objects.all().filter(user_id=user_id, vid_num=vid_num).order_by('date', 'time')
 	if len(objs) == 0:
@@ -125,10 +143,27 @@ def get_watch_patten_graph(user_id, vid_num):
 
 
 	# plot the data
+	plt.figure()
 	plt.scatter(timestamps, rel_times, color = colors)
-	print(f'max speed was: {max_speed}')
-	plt.show()
-	return True # change to the plot
+	plt.title(f'Watch Pattern for Video: {vid_num} by User: {user_id}')
+	plt.xlabel('Video Timestamp [sec]')
+	plt.ylabel('Real-World Time [sec]')
+
+	# create the color map and bar
+	colordict = {
+		'red': [(0, 0, 0, alpha), (1, 1, 1, alpha)],
+		'green': [(0, green, green, alpha), (1, green, green, alpha)],
+		'blue': [(0, blue, blue, alpha), (1, blue, blue, alpha)]
+	}
+	colormap = LinearSegmentedColormap('colormap', segmentdata=colordict)
+	norm = matplotlib.colors.Normalize(vmin=0, vmax=max_speed)
+	plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.cool), label='Video Speed')
+
+	# save the graph as a png
+	GRAPH_PATH_REL_STATIC = f'images/{user_id}_{vid_num}.png'
+	SAVE_GRAPH_DIR = os.path.join(STATIC_DIR, GRAPH_PATH_REL_STATIC)
+	plt.savefig(SAVE_GRAPH_DIR)
+	return GRAPH_PATH_REL_STATIC
 
 
 # positive difference means time2 is in the future

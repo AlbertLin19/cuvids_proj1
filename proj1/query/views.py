@@ -43,9 +43,13 @@ def response(request):
 		return redirect('user-query')
 
 	# check that the vid_num exists for that user
-	plot = fetch.get_watch_patten_graph(user_id, vid_num)
-	context = {'plot': plot}
-	if not plot:
+	img_path = fetch.get_watch_patten_graph(user_id, vid_num)
+	context = {
+		'img_path': img_path,
+		'user_id': user_id,
+		'vid_num': vid_num
+	}
+	if not img_path:
 		messages.warning(request, f"Invalid video number given - redirecting back to user ID search!")
 		return redirect('user-query')
 
@@ -62,6 +66,7 @@ def response(request):
 		VideoCount.objects.create(vid_num=vid_num, count=1)
 
 	# display the graph
+	messages.success(request, f"User and video found! Displaying watch pattern graph...")
 	return render(request, 'query/response.html', context)
 
 # display stored query counts

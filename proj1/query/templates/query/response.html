@@ -1,0 +1,11 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block content %}
+    <div class="content-section">
+        {% csrf_token %}
+        <legend class="border-bottom mb-4">Watch Pattern Graph<br>User: '{{ user_id }}'<br>Video: '{{ vid_num }}'</legend>
+        <img src="{% static img_path %}" alt="{{ img_path }}">
+        <a class="nav-item nav-link" href="{% url 'user-query' %}">New Query</a>
+    </div>
+{% endblock content %}

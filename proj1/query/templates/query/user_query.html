@@ -15,7 +15,9 @@
         </form>
     </div>
     <div class="content-section">User IDs stored:</div>
-    {% for user in users %}
-    <p>{{ user }}</p>
-    {% endfor %}
+    <p>
+        {% for user in users %}
+            '     '{{ user }}'     '
+        {% endfor %}
+    </p>
 {% endblock content %}
