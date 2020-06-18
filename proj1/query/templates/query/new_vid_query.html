@@ -1,0 +1,23 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="content-section">
+        <form action="{% url 'new-vid-response' %}" method="GET">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Enter Video ID:</legend>
+                <label for='vid_num'>Video ID:</label><br>
+                <input type='text' id='vid_num' name='vid_num'><br>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+    <div class="content-section">Video IDs stored:</div>
+    <p>
+        {% for vid in videos %}
+            '     '{{ vid }}'     '
+        {% endfor %}
+    </p>
+{% endblock content %}

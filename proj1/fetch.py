@@ -36,8 +36,6 @@ if reload_file.readlines():
 	WatchData.objects.all().delete()
 	print('database cleared')
 	data_objects = [] # accumulate data objects to store
-	redundant_users = [] # accumulate users
-	redundant_videos = [] # accumulate videos
 	file_num = 0
 	for path in paths:
 		file_num+=1
@@ -61,9 +59,6 @@ if reload_file.readlines():
 				vid_timestamp=vid_timestamp, 
 				speed=speed, user_id=user_id, 
 				vid_num=vid_num))
-			# keep track of users and videos
-			redundant_users.append(user_id)
-			redundant_videos.append(vid_num)
 	print('all objects created, saving to database')
 	WatchData.objects.bulk_create(data_objects)
 	print('objects saved, clearing the reload_file')
@@ -72,25 +67,15 @@ if reload_file.readlines():
 	reload_file.write('')
 	reload_file.close()
 
-	# store only unique users and videos
-	users = sorted(list(set(redundant_users)))
-	videos = sorted(list(set(redundant_videos)))
-
-else: # need to recache the unique users and videos upon a rerun of this script
-	redundant_users = []
-	redundant_videos = []
-	print("getting all the objects from the database")
-	all_watches = WatchData.objects.all()
-	print(f'scanning through {len(all_watches)} objects in the database')
-	for watch in all_watches:
-		redundant_users.append(watch.user_id)
-		redundant_videos.append(watch.vid_num)
-	users = sorted(list(set(redundant_users)))
-	videos = sorted(list(set(redundant_videos)))
-
+	
 # script finished, close up everything
 reload_file.close()
 print('fetch.py was run again, reload_file closed')
+
+# need to recache the unique users and videos upon a rerun of this script
+print("getting all the unique users and videos from the database")
+users = sorted(list(set(WatchData.objects.all().values_list('user_id', flat=True))))
+videos = sorted(list(set(WatchData.objects.all().values_list('vid_num', flat=True))))
 
 def get_users():
 	return users
@@ -145,9 +130,9 @@ def get_watch_patten_graph(user_id, vid_num):
 	# plot the data
 	plt.figure()
 	plt.scatter(timestamps, rel_times, color = colors)
-	plt.title(f'Watch Pattern for Video: {vid_num} by User: {user_id}')
+	plt.title(f'Video: {vid_num} by User: {user_id}', pad=20)
 	plt.xlabel('Video Timestamp [sec]')
-	plt.ylabel('Real-World Time [sec]')
+	plt.ylabel(f'Time [sec] Rel to {dates[0]}, {times[0]}')
 
 	# create the color map and bar
 	colordict = {

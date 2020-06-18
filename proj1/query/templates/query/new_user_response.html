@@ -1,0 +1,17 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block content %}
+    <div class="content-section">
+        {% csrf_token %}
+        <legend class="border-bottom mb-4">Total Watch Time and Video Watched by:<br>User: '{{ username }}'<br></legend>
+        <p>Count: {{ count }}</p>
+        <p>Videos: 
+        	{% for vid in videos %}
+        	{{ vid }}, 
+        	{% endfor %}
+        </p>
+        <a class="nav-item nav-link" href="{% url 'new-user-query' %}">New User Query</a>
+        <a class="nav-item nav-link" href="{% url 'new-vid-query' %}">New Video Query</a>
+    </div>
+{% endblock content %}

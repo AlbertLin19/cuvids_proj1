@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import UserCount, VideoCount, WatchData
-import fetch
+import fetch, fetch_csv
 
 # home page: search for users
 def userQuery(request):
@@ -83,3 +83,58 @@ def reset(request):
 	VideoCount.objects.all().delete()
 	messages.success(request, f'All query counts reset!')
 	return redirect('user-query')
+
+def newUserQuery(request):
+	context = {
+		'users': fetch_csv.get_users()
+	}
+	return render(request, 'query/new_user_query.html', context)
+
+def newVidQuery(request):
+	context = {
+		'videos': fetch_csv.get_videos()
+	}
+	return render(request, 'query/new_vid_query.html', context)
+
+def newUserResponse(request):
+	username = request.GET.get('username')
+	count, videos = fetch_csv.get_time_and_vids_for_user(username)
+
+	# check that the username exists
+	if len(videos) == 0:
+		messages.warning(request, f"Invalid username given - redirecting back to username search!")
+		return redirect('new-user-query')
+
+	messages.success(request, f"Showing total watch time and videos watched by '{username}'!")
+
+	context = {
+		'username': username,
+		'count': count,
+		'videos': videos
+	}
+	return render(request, 'query/new_user_response.html', context)
+
+def newVidResponse(request):
+	vid_num = request.GET.get('vid_num')
+	
+	# check that the vid_num is a number
+	if not vid_num.isdigit():
+		messages.warning(request, f"Invalid video ID given - redirecting back to video ID search!")
+		return redirect('new-vid-query')
+
+	vid_num = int(vid_num)
+
+	count, users = fetch_csv.get_time_and_users_for_vid(vid_num)
+	# check that the vid_num exists
+	if len(users) == 0:
+		messages.warning(request, f"Invalid video ID given - redirecting back to video ID search!")
+		return redirect('new-vid-query')
+
+	messages.success(request, f"Showing total watch time and users who watched '{vid_num}'!")
+
+	context = {
+		'vid_num': vid_num,
+		'count': count,
+		'users': users
+	}
+	return render(request, 'query/new_vid_response.html', context)

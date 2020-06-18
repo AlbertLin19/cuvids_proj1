@@ -1,0 +1,23 @@
+{% extends "query/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="content-section">
+        <form action="{% url 'new-user-response' %}" method="GET">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Enter Username:</legend>
+                <label for='user_id'>Username:</label><br>
+                <input type='text' id='username' name='username'><br>
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+    <div class="content-section">Usernames stored:</div>
+    <p>
+        {% for user in users %}
+            '     '{{ user }}'     '
+        {% endfor %}
+    </p>
+{% endblock content %}
