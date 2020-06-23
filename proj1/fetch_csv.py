@@ -13,15 +13,19 @@ from django.core.files.storage import default_storage
 DATA_DIR = 'summer_data_csv/' # where all data and config files for data should be stored
 SAVE_DIR = DATA_DIR + 'pandas_watch_data.pkl' # where the pandas dataframe is saved
 
-# load the saved pandas dataframe
-print('opening the saved pandas dataframe to initialize users, videos, email_domains')
-save_file = default_storage.open(SAVE_DIR)
-final_dataframe = pd.read_pickle(save_file)
-save_file.close()
-# cache the unique users, videos, and email domains for quicker performance
-users = final_dataframe['Username'].unique()
-videos = final_dataframe['Video Id'].unique()
-email_domains = final_dataframe['Domain'].unique()
+users = []
+videos = []
+email_domains = []
+# load the saved pandas dataframe if it exists
+if default_storage.exists(SAVE_DIR):
+	print('opening the saved pandas dataframe to initialize users, videos, email_domains')
+	save_file = default_storage.open(SAVE_DIR)
+	final_dataframe = pd.read_pickle(save_file)
+	save_file.close()
+	# cache the unique users, videos, and email domains for quicker performance
+	users = final_dataframe['Username'].unique()
+	videos = final_dataframe['Video Id'].unique()
+	email_domains = final_dataframe['Domain'].unique()
 
 # store the csv data from DATA_DIR into the pandas pickle file
 def store_csv():
