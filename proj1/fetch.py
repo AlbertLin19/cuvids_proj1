@@ -1,7 +1,10 @@
-# load the data into a database
+# load the data from S3 bucket into a database
 # (for now, will clear and readd all the data)
-import os
-from query.models import WatchData 
+
+# files were saved in S3 bucket
+from django.core.files.storage import default_storage
+DATA_DIR = 'anonymized_data/' # where all data and config files for data should be stored within the S3 bucket
+from query.models import WatchData # will store data into actual database
 
 # the Agg needs to be used to prevent 'outside main thread error' with the 'get_watch_patten_graph()' function
 import matplotlib
@@ -10,48 +13,39 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import datetime
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WATCH_DIR = os.path.join(BASE_DIR, 'anonymized_data/') # where all data and config files for data should be stored
-STATIC_DIR = os.path.join(BASE_DIR, 'proj1/query/static/') # where static files stored
-RELOAD_DIR = os.path.join(WATCH_DIR, 'reload.txt')     # signals for a reload when not empty
-reload_file = open(RELOAD_DIR, 'r')
-
 # cache the unique users and videos for quicker performance
-users = []
-videos = []
+print("getting all the unique users and videos from the database")
+users = sorted(list(set(WatchData.objects.all().values_list('user_id', flat=True))))
+videos = sorted(list(set(WatchData.objects.all().values_list('vid_num', flat=True))))
 
-if reload_file.readlines():
-	print(f'resetting database with all data from: {WATCH_DIR}')
-
-	# accumulate all file paths to read from
-	paths = [] 
-	for root, directory, files in os.walk(WATCH_DIR):
-		for file in files:
-			if 'watches_range.txt' in file:
-				paths.append(os.path.join(root, file)) 
-
-
+# enter the stored data within DATA_DIR into the database
+def store_txt():
+	print(f'resetting database with all data from: {DATA_DIR}')
 	# reload the database
 	WatchData.objects.all().delete()
 	print('database cleared')
+
 	data_objects = [] # accumulate data objects to store
 	file_num = 0
-	for path in paths:
-		file_num+=1
-		file = open(path, 'r')
-		lines = file.readlines()
-		print(f'({file_num}/{len(paths)}) reading in: {path} ({len(lines)} lines)')
+	# accumulate all files to read from and read
+	folders, files = default_storage.listdir(DATA_DIR) # files is a list of path strings
+	for file in files:
+		if 'watches_range.txt' in file:
+			file_num+=1
+			open_file = default_storage.open(DATA_DIR + file)
+			lines = open_file.readlines()
+			open_file.close()
+			print(f'({file_num}/{len(files)}) reading in: {file} ({len(files)} lines)')
 
-		# read in data from each line
-		for line in lines:
-			line_entries = line.split('|')
-			date = line_entries[0][0:10]
-			time = line_entries[0][11: 26]
-			vid_timestamp = float(line_entries[1])
-			speed = float(line_entries[2])
-			user_id = int(line_entries[5])
-			vid_num = int(line_entries[6])
+			# read in data from each line
+			for line in lines:
+				line_entries = line.split('|')
+				date = line_entries[0][0:10]
+				time = line_entries[0][11: 26]
+				vid_timestamp = float(line_entries[1])
+				speed = float(line_entries[2])
+				user_id = int(line_entries[5])
+				vid_num = int(line_entries[6])
 
 			# create object
 			data_objects.append(WatchData(date=date, 
@@ -59,23 +53,16 @@ if reload_file.readlines():
 				vid_timestamp=vid_timestamp, 
 				speed=speed, user_id=user_id, 
 				vid_num=vid_num))
+	
 	print('all objects created, saving to database')
 	WatchData.objects.bulk_create(data_objects)
-	print('objects saved, clearing the reload_file')
-	reload_file.close()
-	reload_file = open(RELOAD_DIR, 'w')
-	reload_file.write('')
-	reload_file.close()
+	print('objects saved')
 
-	
-# script finished, close up everything
-reload_file.close()
-print('fetch.py was run again, reload_file closed')
-
-# need to recache the unique users and videos upon a rerun of this script
-print("getting all the unique users and videos from the database")
-users = sorted(list(set(WatchData.objects.all().values_list('user_id', flat=True))))
-videos = sorted(list(set(WatchData.objects.all().values_list('vid_num', flat=True))))
+# recache the users and videos
+def refresh_cache():
+	print("recaching all the unique users and videos from the database")
+	users = sorted(list(set(WatchData.objects.all().values_list('user_id', flat=True))))
+	videos = sorted(list(set(WatchData.objects.all().values_list('vid_num', flat=True))))
 
 def get_users():
 	return users
@@ -86,6 +73,7 @@ def get_vids_for_user(user_id):
 	for watch in all_watches:
 		redundant_vid_nums.append(watch.vid_num)
 	return sorted(list(set(redundant_vid_nums)))
+
 
 def get_watch_patten_graph(user_id, vid_num):
 	gap_duration = 8 # watch is considered to be another session if gap exceeds this in seconds
@@ -145,10 +133,11 @@ def get_watch_patten_graph(user_id, vid_num):
 	plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.cool), label='Video Speed')
 
 	# save the graph as a png
-	GRAPH_PATH_REL_STATIC = f'images/{user_id}_{vid_num}.png'
-	SAVE_GRAPH_DIR = os.path.join(STATIC_DIR, GRAPH_PATH_REL_STATIC)
-	plt.savefig(SAVE_GRAPH_DIR)
-	return GRAPH_PATH_REL_STATIC
+	GRAPH_PATH = f'graphs/{user_id}_{vid_num}.png'
+	graph_file = default_storage.open(GRAPH_PATH, 'w')
+	plt.savefig(graph_file)
+	graph_file.close()
+	return GRAPH_PATH
 
 
 # positive difference means time2 is in the future

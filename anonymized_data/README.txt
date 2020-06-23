@@ -1,1 +1,0 @@
-This folder contains file whose ID's are replaced by hash code for anonymity
